@@ -105,6 +105,10 @@ impl Key<Bytes> {
         self.0.as_ref()
     }
 
+    pub fn from_vec(vec: Vec<u8>) -> KeyBytes {
+        Key(Bytes::from(vec))
+    }
+
     pub fn for_testing_from_bytes_no_ts(bytes: Bytes) -> KeyBytes {
         Key(bytes)
     }
