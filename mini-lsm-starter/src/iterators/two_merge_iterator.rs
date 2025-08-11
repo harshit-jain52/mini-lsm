@@ -24,7 +24,7 @@ use super::StorageIterator;
 pub struct TwoMergeIterator<A: StorageIterator, B: StorageIterator> {
     a: A,
     b: B,
-    // Add fields as need
+    flag: bool, // true if a is chosen, false if b is chosen
 }
 
 impl<
@@ -33,7 +33,29 @@ impl<
 > TwoMergeIterator<A, B>
 {
     pub fn create(a: A, b: B) -> Result<Self> {
-        unimplemented!()
+        let mut iter = Self { a, b, flag: false };
+        iter.skip_b()?;
+        iter.flag = Self::choose_a(&iter.a, &iter.b);
+        Ok(iter)
+    }
+
+    fn choose_a(a: &A, b: &B) -> bool {
+        if !a.is_valid() {
+            return false;
+        }
+        if !b.is_valid() {
+            return true;
+        }
+        a.key() < b.key()
+    }
+
+    fn skip_b(&mut self) -> Result<()> {
+        if self.a.is_valid() {
+            if self.b.is_valid() && self.a.key() == self.b.key() {
+                self.b.next()?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -45,18 +67,37 @@ impl<
     type KeyType<'a> = A::KeyType<'a>;
 
     fn key(&self) -> Self::KeyType<'_> {
-        unimplemented!()
+        if self.flag {
+            self.a.key()
+        } else {
+            self.b.key()
+        }
     }
 
     fn value(&self) -> &[u8] {
-        unimplemented!()
+        if self.flag {
+            self.a.value()
+        } else {
+            self.b.value()
+        }
     }
 
     fn is_valid(&self) -> bool {
-        unimplemented!()
+        if self.flag {
+            self.a.is_valid()
+        } else {
+            self.b.is_valid()
+        }
     }
 
     fn next(&mut self) -> Result<()> {
-        unimplemented!()
+        if self.flag {
+            self.a.next()?;
+        } else {
+            self.b.next()?;
+        }
+        self.skip_b()?;
+        self.flag = Self::choose_a(&self.a, &self.b);
+        Ok(())
     }
 }
