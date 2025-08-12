@@ -67,13 +67,14 @@ impl Block {
             data: data[..data_end].to_vec(),
             offsets: data[data_end..data.len() - 2]
                 .chunks_exact(2)
-                .map(|chunk| u16::from_le_bytes([chunk[1], chunk[0]]))
+                .map(|chunk| u16::from_be_bytes([chunk[0], chunk[1]]))
                 .collect::<Vec<u16>>(),
         }
     }
 
     pub fn get_first_key(&self) -> KeyVec {
         let mut buf = &self.data[..];
+        buf.get_u16(); // Skip the overlap length
         let key_len = buf.get_u16();
         let key = &buf[..key_len as usize];
         KeyVec::from_vec(key.to_vec())

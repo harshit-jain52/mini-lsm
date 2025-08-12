@@ -369,10 +369,17 @@ impl LsmStorageInner {
                 table.first_key().raw_ref(),
                 table.last_key().raw_ref(),
             ) {
-                iters.push(Box::new(SsTableIterator::create_and_seek_to_key(
-                    table,
-                    key.clone(),
-                )?));
+                if let Some(bloom) = &table.bloom {
+                    if bloom.may_contain(farmhash::fingerprint32(_key)) {
+                        iters.push(Box::new(SsTableIterator::create_and_seek_to_key(
+                            table, key,
+                        )?));
+                    }
+                } else {
+                    iters.push(Box::new(SsTableIterator::create_and_seek_to_key(
+                        table, key,
+                    )?));
+                }
             }
         }
         let iter = MergeIterator::create(iters);

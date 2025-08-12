@@ -118,14 +118,16 @@ impl BlockIterator {
         let offset = self.block.offsets[idx] as usize;
         let mut entry = &self.block.data[offset..];
 
+        let overlap_len = entry.get_u16() as usize;
         let key_len = entry.get_u16() as usize;
         let key = &entry[..key_len];
         entry.advance(key_len);
         self.key.clear();
+        self.key.append(&self.first_key.raw_ref()[..overlap_len]);
         self.key.append(key);
 
         let value_len = entry.get_u16() as usize;
-        let value_start = offset + 2 + key_len + 2;
+        let value_start = offset + 2 + 2 + key_len + 2;
         let value_end = value_start + value_len;
         self.value_range = (value_start, value_end);
         entry.advance(value_len);
